@@ -117,6 +117,12 @@ def main():
     """
     Main execution function.
     """
+    # Feature configuration: choice -> (name, runner, example_project)
+    features = {
+        '1': ("Release Manager", run_release_manager, "PROJ"),
+        '2': ("Initiative Exporter", run_initiative_exporter, "PMT"),
+    }
+    
     try:
         jira = None  # Lazy initialization - only connect when needed
         
@@ -127,15 +133,13 @@ def main():
             if choice == '3':
                 print("\nGoodbye!")
                 break
-            elif choice in ('1', '2'):
+            elif choice in features:
                 # Connect to Jira only when a feature is selected
                 if jira is None:
                     jira = JiraClient.from_env()
                 
-                if choice == '1':
-                    run_feature_workflow(jira, "Release Manager", run_release_manager, "PROJ")
-                elif choice == '2':
-                    run_feature_workflow(jira, "Initiative Exporter", run_initiative_exporter, "PMT")
+                name, runner, example = features[choice]
+                run_feature_workflow(jira, name, runner, example)
             else:
                 print("\n⚠️  Invalid option. Please select 1, 2, or 3.")
         
