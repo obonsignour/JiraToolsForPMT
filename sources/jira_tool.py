@@ -33,6 +33,53 @@ def get_all_projects(jira: JiraClient) -> List[Dict]:
         return []
 
 
+def list_projects_if_requested(jira: JiraClient):
+    """
+    Optionally list available projects if user requests.
+    
+    Args:
+        jira: Authenticated Jira client instance
+    """
+    list_choice = input("\nDo you want to see a list of available projects? (y/n): ").strip().lower()
+    if list_choice == 'y':
+        print("\n📋 Fetching projects...")
+        projects = get_all_projects(jira)
+        if projects:
+            print(f"\nFound {len(projects)} project(s):")
+            for proj in projects[:20]:  # Show first 20
+                print(f"  • {proj.get('key')}: {proj.get('name')}")
+            if len(projects) > 20:
+                print(f"  ... and {len(projects) - 20} more projects")
+        else:
+            print("No projects found or unable to fetch projects.")
+
+
+def get_project_key_from_user(default_example: str = "PROJ") -> str:
+    """
+    Prompt user for project key.
+    
+    Args:
+        default_example: Example project key to show in prompt
+        
+    Returns:
+        str: Project key entered by user (stripped), or empty string
+    """
+    project_key = input(f"\nEnter your Jira project key (e.g., {default_example}): ").strip()
+    return project_key
+
+
+def display_feature_header(title: str):
+    """
+    Display a feature header.
+    
+    Args:
+        title: Title of the feature
+    """
+    print("\n" + "="*60)
+    print(title)
+    print("="*60)
+
+
 def display_menu():
     """Display the main menu."""
     print("\n" + "="*60)
@@ -59,62 +106,28 @@ def main():
             
             if choice == '1':
                 # Release Manager
-                print("\n" + "="*60)
-                print("Release Manager")
-                print("="*60)
+                display_feature_header("Release Manager")
                 
-                # Offer to list projects
-                list_projects = input("\nDo you want to see a list of available projects? (y/n): ").strip().lower()
-                if list_projects == 'y':
-                    print("\n📋 Fetching projects...")
-                    projects = get_all_projects(jira)
-                    if projects:
-                        print(f"\nFound {len(projects)} project(s):")
-                        for proj in projects[:20]:  # Show first 20
-                            print(f"  • {proj.get('key')}: {proj.get('name')}")
-                        if len(projects) > 20:
-                            print(f"  ... and {len(projects) - 20} more projects")
-                    else:
-                        print("No projects found or unable to fetch projects.")
-                
-                # Get project key
-                project_key = input("\nEnter your Jira project key (e.g., PROJ): ").strip()
+                list_projects_if_requested(jira)
+                project_key = get_project_key_from_user("PROJ")
                 
                 if not project_key:
                     print("Error: Project key is required")
                     continue
                 
-                # Run release manager
                 run_release_manager(jira, project_key)
                 
             elif choice == '2':
                 # Initiative Exporter
-                print("\n" + "="*60)
-                print("Initiative Exporter")
-                print("="*60)
+                display_feature_header("Initiative Exporter")
                 
-                # Offer to list projects
-                list_projects = input("\nDo you want to see a list of available projects? (y/n): ").strip().lower()
-                if list_projects == 'y':
-                    print("\n📋 Fetching projects...")
-                    projects = get_all_projects(jira)
-                    if projects:
-                        print(f"\nFound {len(projects)} project(s):")
-                        for proj in projects[:20]:  # Show first 20
-                            print(f"  • {proj.get('key')}: {proj.get('name')}")
-                        if len(projects) > 20:
-                            print(f"  ... and {len(projects) - 20} more projects")
-                    else:
-                        print("No projects found or unable to fetch projects.")
-                
-                # Get project key
-                project_key = input("\nEnter your Jira project key (e.g., PMT): ").strip()
+                list_projects_if_requested(jira)
+                project_key = get_project_key_from_user("PMT")
                 
                 if not project_key:
                     print("Error: Project key is required")
                     continue
                 
-                # Run initiative exporter
                 run_initiative_exporter(jira, project_key)
                 
             elif choice == '3':

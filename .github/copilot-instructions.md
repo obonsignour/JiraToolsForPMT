@@ -165,11 +165,13 @@ Main entry point:
 ### Working Features
 
 1. **JiraClient** - Fully functional with:
+
    - `from_env()` class method for easy instantiation
    - Proper error handling and debugging
    - Scoped token support
 
 2. **Release Manager** - Operational:
+
    - Lists all releases in project
    - Filters by issue type (Bug/Customer bug only)
    - Finds Investment Category custom field
@@ -177,6 +179,7 @@ Main entry point:
    - Ready for Phase 2 (update functionality)
 
 3. **Initiative Exporter** - Operational:
+
    - Fetches Initiatives (excludes DONE/CANCELED)
    - Extracts text from Atlassian Document Format (ADF)
    - Exports to JSON with: issueKey, description, requester, linkedIssuesCount
@@ -214,20 +217,24 @@ Main entry point:
 ### Common Issues
 
 1. **401 Unauthorized**
+
    - Check API token is valid and not expired
    - Verify JIRA_EMAIL matches Atlassian account
    - Ensure token has issue read/edit scope
 
 2. **404 Not Found on Project**
+
    - Project key may not exist
    - Token may not have access to that project
    - Try listing projects first to see accessible projects
 
 3. **410 Gone on Search**
+
    - Don't use GET /rest/api/3/search (deprecated)
    - Use POST /rest/api/3/search/jql instead
 
 4. **400 Bad Request - Unbounded JQL**
+
    - Always include project restriction in JQL
    - Example: `project = KEY AND ...`
 
@@ -239,6 +246,7 @@ Main entry point:
 ## Usage Examples
 
 ### Run the Tool
+
 ```powershell
 # Activate venv first
 .\venv\Scripts\Activate.ps1
@@ -248,10 +256,12 @@ python sources/jira_tool.py
 ```
 
 ### Menu Options
+
 1. **Release Manager** - Analyze releases for Bug-only content
 2. **Initiative Exporter** - Export Initiatives to JSON
 3. **Exit** - Quit application
 
 ### Output Files
+
 - Initiative exports: `initiatives_{PROJECT}_{TIMESTAMP}.json`
 - Located in project root directory
