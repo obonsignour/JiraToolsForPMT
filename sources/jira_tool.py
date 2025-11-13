@@ -68,6 +68,27 @@ def get_project_key_from_user(default_example: str = "PROJ") -> str:
     return project_key
 
 
+def run_feature_workflow(jira: JiraClient, feature_name: str, feature_runner, default_example: str = "PROJ"):
+    """
+    Run a feature workflow with common setup (header, project selection).
+    
+    Args:
+        jira: Authenticated Jira client instance
+        feature_name: Name of the feature to display
+        feature_runner: Function to run the feature (takes jira and project_key)
+        default_example: Example project key for the prompt
+    """
+    display_feature_header(feature_name)
+    list_projects_if_requested(jira)
+    project_key = get_project_key_from_user(default_example)
+    
+    if not project_key:
+        print("Error: Project key is required")
+        return
+    
+    feature_runner(jira, project_key)
+
+
 def display_feature_header(title: str):
     """
     Display a feature header.
@@ -105,30 +126,10 @@ def main():
             choice = input("Select an option (1-3): ").strip()
             
             if choice == '1':
-                # Release Manager
-                display_feature_header("Release Manager")
-                
-                list_projects_if_requested(jira)
-                project_key = get_project_key_from_user("PROJ")
-                
-                if not project_key:
-                    print("Error: Project key is required")
-                    continue
-                
-                run_release_manager(jira, project_key)
+                run_feature_workflow(jira, "Release Manager", run_release_manager, "PROJ")
                 
             elif choice == '2':
-                # Initiative Exporter
-                display_feature_header("Initiative Exporter")
-                
-                list_projects_if_requested(jira)
-                project_key = get_project_key_from_user("PMT")
-                
-                if not project_key:
-                    print("Error: Project key is required")
-                    continue
-                
-                run_initiative_exporter(jira, project_key)
+                run_feature_workflow(jira, "Initiative Exporter", run_initiative_exporter, "PMT")
                 
             elif choice == '3':
                 print("\nGoodbye!")
