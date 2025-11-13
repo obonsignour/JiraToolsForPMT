@@ -66,7 +66,7 @@ Python tool for managing Jira issues with multiple features:
 Run the main script to access all features:
 
 ```powershell
-python jira_tool.py
+python sources/jira_tool.py
 ```
 
 ### Main Menu
@@ -101,10 +101,11 @@ The script presents a menu with the following options:
 
 ```
 InvestmentCategories/
-├── jira_tool.py              # Main entry point with menu
-├── jira_client.py            # Jira REST API v3 client
-├── release_manager.py        # Release management features
-├── initiative_exporter.py    # Initiative export functionality
+├── sources/                  # Python source files
+│   ├── jira_tool.py          # Main entry point with menu
+│   ├── jira_client.py        # Jira REST API v3 client
+│   ├── release_manager.py    # Release management features
+│   └── initiative_exporter.py # Initiative export functionality
 ├── requirements.txt          # Python dependencies
 ├── .env                      # Environment variables (not in git)
 ├── .env.example              # Example environment template

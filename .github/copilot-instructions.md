@@ -19,10 +19,11 @@ Uses **Jira Cloud REST API v3 directly** without any external Jira library depen
 
 ## Project Structure
 
-- `jira_tool.py` - Main entry point with menu system
-- `jira_client.py` - Jira REST API v3 client with connection management
-- `release_manager.py` - Release management features
-- `initiative_exporter.py` - Initiative export to JSON functionality
+- `sources/` - Python source files folder
+  - `jira_tool.py` - Main entry point with menu system
+  - `jira_client.py` - Jira REST API v3 client with connection management
+  - `release_manager.py` - Release management features
+  - `initiative_exporter.py` - Initiative export to JSON functionality
 - `requirements.txt` - Python dependencies (requests, python-dotenv)
 - `.env` - Environment variables for Jira credentials (not committed)
 - `.env.example` - Template for environment variables
@@ -243,7 +244,7 @@ Main entry point:
 .\venv\Scripts\Activate.ps1
 
 # Run main script
-python jira_tool.py
+python sources/jira_tool.py
 ```
 
 ### Menu Options
