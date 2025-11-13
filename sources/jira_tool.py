@@ -118,22 +118,24 @@ def main():
     Main execution function.
     """
     try:
-        # Connect to Jira
-        jira = JiraClient.from_env()
+        jira = None  # Lazy initialization - only connect when needed
         
         while True:
             display_menu()
             choice = input("Select an option (1-3): ").strip()
             
-            if choice == '1':
-                run_feature_workflow(jira, "Release Manager", run_release_manager, "PROJ")
-                
-            elif choice == '2':
-                run_feature_workflow(jira, "Initiative Exporter", run_initiative_exporter, "PMT")
-                
-            elif choice == '3':
+            if choice == '3':
                 print("\nGoodbye!")
                 break
+            elif choice in ('1', '2'):
+                # Connect to Jira only when a feature is selected
+                if jira is None:
+                    jira = JiraClient.from_env()
+                
+                if choice == '1':
+                    run_feature_workflow(jira, "Release Manager", run_release_manager, "PROJ")
+                elif choice == '2':
+                    run_feature_workflow(jira, "Initiative Exporter", run_initiative_exporter, "PMT")
             else:
                 print("\n⚠️  Invalid option. Please select 1, 2, or 3.")
         
