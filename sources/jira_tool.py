@@ -68,16 +68,33 @@ def get_project_key_from_user(default_example: str = "PROJ") -> str:
     return project_key
 
 
-def run_feature_workflow(jira: JiraClient, feature_name: str, feature_runner, default_example: str = "PROJ"):
+# Global cached Jira client instance
+_jira_client = None
+
+def get_jira_client() -> JiraClient:
+    """
+    Get or create the Jira client instance (singleton pattern).
+    
+    Returns:
+        JiraClient: Cached or newly created Jira client
+    """
+    global _jira_client
+    if _jira_client is None:
+        _jira_client = JiraClient.from_env()
+    return _jira_client
+
+
+def run_feature_workflow(feature_name: str, feature_runner, default_example: str = "PROJ"):
     """
     Run a feature workflow with common setup (header, project selection).
     
     Args:
-        jira: Authenticated Jira client instance
         feature_name: Name of the feature to display
         feature_runner: Function to run the feature (takes jira and project_key)
         default_example: Example project key for the prompt
     """
+    jira = get_jira_client()
+    
     display_feature_header(feature_name)
     list_projects_if_requested(jira)
     project_key = get_project_key_from_user(default_example)
@@ -101,15 +118,22 @@ def display_feature_header(title: str):
     print("="*60)
 
 
-def display_menu():
-    """Display the main menu."""
+def display_menu(features: Dict):
+    """
+    Display the main menu dynamically based on available features.
+    
+    Args:
+        features: Dictionary of features with their descriptions
+    """
     print("\n" + "="*60)
     print("Jira Management Tool")
     print("="*60)
     print("\nAvailable Features:")
-    print("  1. Release Manager - Find releases with only Bug issues")
-    print("  2. Initiative Exporter - Export Initiatives to JSON")
-    print("  3. Exit")
+    
+    for choice, feature in sorted(features.items()):
+        print(f"  {choice}. {feature['name']} - {feature['description']}")
+    
+    print(f"  {len(features) + 1}. Exit")
     print()
 
 
@@ -117,31 +141,37 @@ def main():
     """
     Main execution function.
     """
-    # Feature configuration: choice -> (name, runner, example_project)
+    # Feature configuration: choice -> {name, description, runner, example_project}
     features = {
-        '1': ("Release Manager", run_release_manager, "PROJ"),
-        '2': ("Initiative Exporter", run_initiative_exporter, "PMT"),
+        '1': {
+            'name': 'Release Manager',
+            'description': 'Find releases with only Bug issues',
+            'runner': run_release_manager,
+            'example': 'PROJ'
+        },
+        '2': {
+            'name': 'Initiative Exporter',
+            'description': 'Export Initiatives to JSON',
+            'runner': run_initiative_exporter,
+            'example': 'PMT'
+        },
     }
     
+    exit_choice = str(len(features) + 1)
+    
     try:
-        jira = None  # Lazy initialization - only connect when needed
-        
         while True:
-            display_menu()
-            choice = input("Select an option (1-3): ").strip()
+            display_menu(features)
+            choice = input(f"Select an option (1-{exit_choice}): ").strip()
             
-            if choice == '3':
+            if choice == exit_choice:
                 print("\nGoodbye!")
                 break
             elif choice in features:
-                # Connect to Jira only when a feature is selected
-                if jira is None:
-                    jira = JiraClient.from_env()
-                
-                name, runner, example = features[choice]
-                run_feature_workflow(jira, name, runner, example)
+                feature = features[choice]
+                run_feature_workflow(feature['name'], feature['runner'], feature['example'])
             else:
-                print("\n⚠️  Invalid option. Please select 1, 2, or 3.")
+                print(f"\n⚠️  Invalid option. Please select 1-{exit_choice}.")
         
     except KeyboardInterrupt:
         print("\n\nOperation cancelled by user.")
