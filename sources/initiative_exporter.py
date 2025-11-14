@@ -15,6 +15,7 @@ from jira_client import JiraClient
 def get_initiatives(jira: JiraClient, project_key: str) -> List[Dict]:
     """
     Get all Initiative issues from a project that are not DONE or CANCELED.
+    Handles pagination using nextPageToken (max 100 results per page).
     
     Args:
         jira: Authenticated Jira client instance
@@ -29,17 +30,51 @@ def get_initiatives(jira: JiraClient, project_key: str) -> List[Dict]:
         # JQL to find Initiatives that are not DONE or CANCELED
         jql = f'project = {project_key} AND issuetype = Initiative AND status NOT IN (DONE, CANCELED)'
         
-        # Fetch issues with required fields
-        result = jira.post('rest/api/3/search/jql', data={
-            'jql': jql,
-            'maxResults': 1000,
-            'fields': ['summary', 'description', 'reporter', 'issuelinks']
-        })
+        all_issues = []
+        next_page_token = None
+        page_num = 1
         
-        issues = result.get('issues', [])
-        print(f"✓ Found {len(issues)} Initiative(s)")
+        # Fetch all pages using token-based pagination
+        while True:
+            print(f"  Fetching page {page_num}...", end='')
+            
+            # Build request data
+            request_data = {
+                'jql': jql,
+                'maxResults': 100,  # API limit per page
+                'fields': ['summary', 'description', 'reporter', 'issuelinks', 'fixVersions', 'versions'],
+                'expand': 'issuelinks'  # Expand to get linked issue details
+            }
+            
+            # Add nextPageToken if this is not the first page
+            if next_page_token:
+                request_data['nextPageToken'] = next_page_token
+            
+            # Fetch page
+            result = jira.post('rest/api/3/search/jql', data=request_data)
+            
+            # Collect issues from this page
+            page_issues = result.get('issues', [])
+            all_issues.extend(page_issues)
+            print(f" {len(page_issues)} issues")
+            
+            # Check if this is the last page
+            is_last = result.get('isLast', True)
+            if is_last:
+                break
+            
+            # Get token for next page
+            next_page_token = result.get('nextPageToken')
+            if not next_page_token:
+                # No token but not last page - shouldn't happen, but break to be safe
+                print("  ⚠️  Warning: No nextPageToken but isLast is False")
+                break
+            
+            page_num += 1
         
-        return issues
+        print(f"✓ Found {len(all_issues)} Initiative(s) across {page_num} page(s)")
+        
+        return all_issues
     except Exception as e:
         print(f"❌ Error fetching Initiatives: {e}")
         return []
@@ -79,15 +114,41 @@ def format_initiative_data(issue: Dict) -> Dict:
     else:
         requester = "Unknown"
     
-    # Count linked issues
+    # Process linked issues
     issue_links = fields.get('issuelinks', [])
     linked_issues_count = len(issue_links)
+    
+    # Extract linked issue details
+    linked_issues_details = []
+    for link in issue_links:
+        # Linked issue can be inward or outward
+        linked_issue = link.get('inwardIssue') or link.get('outwardIssue')
+        if linked_issue:
+            linked_fields = linked_issue.get('fields', {})
+            issue_type = linked_fields.get('issuetype', {})
+            
+            linked_issues_details.append({
+                'key': linked_issue.get('key', ''),
+                'summary': linked_fields.get('summary', ''),
+                'issueType': issue_type.get('name', '')
+            })
+    
+    # Get fix versions
+    fix_versions = fields.get('fixVersions', [])
+    fix_version_names = [v.get('name', '') for v in fix_versions] if fix_versions else []
+    
+    # Get affected versions (versions field)
+    affected_versions = fields.get('versions', [])
+    affected_version_names = [v.get('name', '') for v in affected_versions] if affected_versions else []
     
     return {
         'issueKey': issue_key,
         'description': description,
         'requester': requester,
-        'linkedIssuesCount': linked_issues_count
+        'linkedIssuesCount': linked_issues_count,
+        'linkedIssues': linked_issues_details,
+        'fixVersions': fix_version_names,
+        'affectedVersions': affected_version_names
     }
 
 
@@ -188,3 +249,6 @@ def run_initiative_exporter(jira: JiraClient, project_key: str):
         print(f"  - description: The issue description")
         print(f"  - requester: The issue reporter/requester")
         print(f"  - linkedIssuesCount: Number of linked issues")
+        print(f"  - linkedIssues: Array of linked issues with key, summary, and issueType")
+        print(f"  - fixVersions: List of fix version names")
+        print(f"  - affectedVersions: List of affected version names")
